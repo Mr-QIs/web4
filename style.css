@@ -90,7 +90,8 @@ main {
     color: #fff;
     letter-spacing: 0.2rem;
     transform: rotateX(20deg) rotateY(-10deg);
-    animation: titleFloat 4.2s ease-in-out infinite;
+    animation: titleFloat 6s ease-in-out infinite;
+    will-change: transform;
     text-shadow: 
         0 1px 0 #ccc,
         0 2px 0 #c9c9c9,
@@ -119,7 +120,7 @@ main {
     z-index: -1;
     filter: blur(8px);
     opacity: 0.5;
-    animation: glitch 3s infinite;
+    animation: glitch 4s infinite;
 }
 
 footer {
@@ -129,8 +130,8 @@ footer {
     font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.5);
     animation: fadeInUp 1s ease-out;
-    border-top: 1px solid rgba(112, 0, 255, 0.2);
-    background: linear-gradient(transparent, rgba(112, 0, 255, 0.05));
+    border-top: 1px solid rgba(0, 242, 255, 0.2);
+    background: linear-gradient(transparent, rgba(0, 242, 255, 0.05));
 }
 
 footer span.placeholder {
@@ -141,14 +142,11 @@ footer span.placeholder {
     0% {
         transform: rotateX(15deg) rotateY(-15deg) translate3d(0, 0, 0) rotateZ(-2deg);
     }
-    25% {
-        transform: rotateX(25deg) rotateY(10deg) translate3d(0, -25px, 0) rotateZ(1deg);
+    33% {
+        transform: rotateX(25deg) rotateY(10deg) translate3d(15px, -30px, 20px) rotateZ(1deg);
     }
-    50% {
-        transform: rotateX(20deg) rotateY(20deg) translate3d(0, -45px, 0) rotateZ(2deg);
-    }
-    75% {
-        transform: rotateX(15deg) rotateY(-10deg) translate3d(0, -25px, 0) rotateZ(1deg);
+    66% {
+        transform: rotateX(20deg) rotateY(20deg) translate3d(-15px, -50px, 40px) rotateZ(3deg);
     }
     100% {
         transform: rotateX(15deg) rotateY(-15deg) translate3d(0, 0, 0) rotateZ(-2deg);
@@ -156,12 +154,11 @@ footer span.placeholder {
 }
 
 @keyframes glitch {
-    0% { transform: translate(0); }
-    20% { transform: translate(-5px, 5px); }
-    40% { transform: translate(-5px, -5px); }
-    60% { transform: translate(5px, 5px); }
-    80% { transform: translate(5px, -5px); }
-    100% { transform: translate(0); }
+    0% { transform: translate(0); opacity: 0.5; }
+    2% { transform: translate(-5px, 2px); opacity: 0.7; }
+    4% { transform: translate(5px, -2px); opacity: 0.7; }
+    6% { transform: translate(0); opacity: 0.5; }
+    100% { transform: translate(0); opacity: 0.5; }
 }
 
 @keyframes fadeInDown {
@@ -229,19 +226,16 @@ footer span.placeholder {
 
     /* 简化3D动画以节省性能 */
     .main-title {
-        animation: titleFloatMobile 3.2s ease-in-out infinite alternate !important;
+        animation: titleFloatMobile 4s ease-in-out infinite alternate !important;
     }
 
     /* 简化动画 */
     @keyframes titleFloatMobile {
         0% {
-            transform: translateY(0) rotateZ(-1deg);
-        }
-        50% {
-            transform: translateY(-15px) rotateZ(1deg);
+            transform: translate3d(0, 0, 0) rotateZ(-1.5deg);
         }
         100% {
-            transform: translateY(-30px) rotateZ(-1deg);
+            transform: translate3d(0, -25px, 0) rotateZ(1.5deg);
         }
     }
 
