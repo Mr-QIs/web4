@@ -90,7 +90,7 @@ main {
     color: #fff;
     letter-spacing: 0.2rem;
     transform: rotateX(20deg) rotateY(-10deg);
-    animation: titleFloat 4s ease-in-out infinite alternate;
+    animation: titleFloat 4.2s ease-in-out infinite;
     text-shadow: 
         0 1px 0 #ccc,
         0 2px 0 #c9c9c9,
@@ -138,11 +138,20 @@ footer span.placeholder {
 }
 
 @keyframes titleFloat {
-    from {
-        transform: rotateX(15deg) rotateY(-15deg) translateY(0);
+    0% {
+        transform: rotateX(18deg) rotateY(-12deg) translate3d(0, 0, 0) rotateZ(-1deg);
     }
-    to {
-        transform: rotateX(25deg) rotateY(15deg) translateY(-20px);
+    25% {
+        transform: rotateX(22deg) rotateY(5deg) translate3d(0, -18px, 0) rotateZ(0.5deg);
+    }
+    50% {
+        transform: rotateX(20deg) rotateY(12deg) translate3d(0, -28px, 0) rotateZ(1deg);
+    }
+    75% {
+        transform: rotateX(16deg) rotateY(-5deg) translate3d(0, -18px, 0) rotateZ(0.5deg);
+    }
+    100% {
+        transform: rotateX(18deg) rotateY(-12deg) translate3d(0, 0, 0) rotateZ(-1deg);
     }
 }
 
@@ -191,6 +200,7 @@ footer span.placeholder {
     
     .main-title {
         font-size: 4rem;
+        animation: titleFloat 3.6s ease-in-out infinite;
     }
 }
 
@@ -217,18 +227,21 @@ footer span.placeholder {
             0 0 20px var(--secondary-color);
     }
 
-    /* 禁用3D动画以节省性能 */
+    /* 简化3D动画以节省性能 */
     .main-title {
-        transform: none !important; /* 移除rotateX/rotateY */
+        animation: titleFloatMobile 3.2s ease-in-out infinite alternate !important;
     }
 
     /* 简化动画 */
-    @keyframes titleFloat {
-        from {
-            transform: translateY(0);
+    @keyframes titleFloatMobile {
+        0% {
+            transform: translateY(0) rotateZ(-0.5deg);
         }
-        to {
-            transform: translateY(-10px); /* 减少移动距离 */
+        50% {
+            transform: translateY(-10px) rotateZ(0.3deg);
+        }
+        100% {
+            transform: translateY(-18px) rotateZ(-0.5deg);
         }
     }
 
