@@ -88,6 +88,7 @@ Thumbs.db
 # Logs
 logs
 *.log
+server.log
 
 # Temporary files
 tmp/
