@@ -23,16 +23,25 @@
     let height = 0;
     let dpr = 1;
 
-    let cubes = [];
+    let geometries = [];
     let lightBeams = [];
 
     let vignetteGradient = null;
 
+    const mainEl = document.querySelector('main');
+    let targetMX = 0, targetMY = 0;
+    let currentMX = 0, currentMY = 0;
+
+    window.addEventListener('mousemove', (e) => {
+        targetMX = (e.clientX / window.innerWidth - 0.5) * 40;
+        targetMY = (e.clientY / window.innerHeight - 0.5) * 40;
+    }, { passive: true });
+
     const CAMERA_Z = 900;
     const PROJ_SCALE = 900;
 
-    class SimpleCube {
-        constructor({ x, y, z, size, color, rotSpeedX, rotSpeedY, rotSpeedZ, floatAmp, floatSpeed, floatOffset }) {
+    class Geometry {
+        constructor({ x, y, z, vertices, edges, color, rotSpeedX, rotSpeedY, rotSpeedZ, floatAmp, floatSpeed, floatOffset }) {
             this.x = x;
             this.y = y;
             this.baseY = y;
@@ -52,26 +61,11 @@
             this.floatSpeed = floatSpeed;
             this.floatOffset = floatOffset;
 
-            const s = size;
-            this.vertices = [
-                { x: -s, y: -s, z: -s },
-                { x: s, y: -s, z: -s },
-                { x: s, y: s, z: -s },
-                { x: -s, y: s, z: -s },
-                { x: -s, y: -s, z: s },
-                { x: s, y: -s, z: s },
-                { x: s, y: s, z: s },
-                { x: -s, y: s, z: s }
-            ];
+            this.vertices = vertices;
+            this.edges = edges;
 
-            this.edges = [
-                0, 1, 1, 2, 2, 3, 3, 0,
-                4, 5, 5, 6, 6, 7, 7, 4,
-                0, 4, 1, 5, 2, 6, 3, 7
-            ];
-
-            this.projected = new Array(8);
-            for (let i = 0; i < 8; i++) this.projected[i] = { x: 0, y: 0, scale: 1 };
+            this.projected = new Array(vertices.length);
+            for (let i = 0; i < vertices.length; i++) this.projected[i] = { x: 0, y: 0, scale: 1 };
         }
 
         update(t) {
@@ -118,7 +112,7 @@
             const siny = Math.sin(this.ry), cosy = Math.cos(this.ry);
             const sinz = Math.sin(this.rz), cosz = Math.cos(this.rz);
 
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < this.vertices.length; i++) {
                 this.projectPoint(this.vertices[i], this.projected[i], sinx, cosx, siny, cosy, sinz, cosz);
             }
 
@@ -141,6 +135,43 @@
             ctx.globalAlpha = 1;
         }
     }
+
+    const getCube = (s) => ({
+        vertices: [
+            { x: -s, y: -s, z: -s }, { x: s, y: -s, z: -s }, { x: s, y: s, z: -s }, { x: -s, y: s, z: -s },
+            { x: -s, y: -s, z: s }, { x: s, y: -s, z: s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s }
+        ],
+        edges: [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7]
+    });
+
+    const getTetrahedron = (s) => ({
+        vertices: [
+            { x: s, y: s, z: s }, { x: s, y: -s, z: -s }, { x: -s, y: s, z: -s }, { x: -s, y: -s, z: s }
+        ],
+        edges: [0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3]
+    });
+
+    const getPyramid = (s) => ({
+        vertices: [
+            { x: -s, y: s, z: -s }, { x: s, y: s, z: -s }, { x: s, y: s, z: s }, { x: -s, y: s, z: s }, { x: 0, y: -s, z: 0 }
+        ],
+        edges: [0, 1, 1, 2, 2, 3, 3, 0, 0, 4, 1, 4, 2, 4, 3, 4]
+    });
+
+    const getPrism = (s) => ({
+        vertices: [
+            { x: 0, y: -s, z: s * 0.8 }, { x: s * 0.7, y: -s, z: -s * 0.4 }, { x: -s * 0.7, y: -s, z: -s * 0.4 },
+            { x: 0, y: s, z: s * 0.8 }, { x: s * 0.7, y: s, z: -s * 0.4 }, { x: -s * 0.7, y: s, z: -s * 0.4 }
+        ],
+        edges: [0, 1, 1, 2, 2, 0, 3, 4, 4, 5, 5, 3, 0, 3, 1, 4, 2, 5]
+    });
+
+    const getOctahedron = (s) => ({
+        vertices: [
+            { x: s, y: 0, z: 0 }, { x: -s, y: 0, z: 0 }, { x: 0, y: s, z: 0 }, { x: 0, y: -s, z: 0 }, { x: 0, y: 0, z: s }, { x: 0, y: 0, z: -s }
+        ],
+        edges: [0, 2, 0, 3, 0, 4, 0, 5, 1, 2, 1, 3, 1, 4, 1, 5, 2, 4, 4, 3, 3, 5, 5, 2]
+    });
 
     class LightBeam {
         constructor(x, direction, color) {
@@ -196,18 +227,19 @@
         const mobile = isMobile();
         const tablet = isTablet();
 
-        const cubeCount = mobile ? 12 : tablet ? 13 : 15;
+        const count = mobile ? 12 : tablet ? 13 : 15;
         const beamCount = mobile ? 2 : 3;
 
         const sizeBase = mobile ? 24 : tablet ? 30 : 34;
 
-        cubes = [];
+        geometries = [];
         lightBeams = [];
 
         const palette = [colors.primary, colors.secondary, colors.accent];
+        const factories = [getCube, getTetrahedron, getPyramid, getPrism, getOctahedron];
 
-        for (let i = 0; i < cubeCount; i++) {
-            const layer = i / (cubeCount - 1 || 1);
+        for (let i = 0; i < count; i++) {
+            const layer = i / (count - 1 || 1);
             const z = 120 + layer * 520;
 
             const spreadX = width * 0.38;
@@ -227,12 +259,16 @@
             const floatSpeed = (mobile ? 0.6 : 0.8) + Math.random() * 0.6;
             const floatOffset = Math.random() * Math.PI * 2;
 
-            cubes.push(
-                new SimpleCube({
+            const factory = factories[Math.floor(Math.random() * factories.length)];
+            const { vertices, edges } = factory(size);
+
+            geometries.push(
+                new Geometry({
                     x,
                     y,
                     z,
-                    size,
+                    vertices,
+                    edges,
                     color: palette[i % palette.length],
                     rotSpeedX,
                     rotSpeedY,
@@ -244,7 +280,7 @@
             );
         }
 
-        cubes.sort((a, b) => b.z - a.z);
+        geometries.sort((a, b) => b.z - a.z);
 
         for (let i = 0; i < beamCount; i++) {
             const x = (width / beamCount) * (i + 0.3 + Math.random() * 0.4);
@@ -269,10 +305,16 @@
 
         drawBackground();
 
+        if (mainEl && !isMobile()) {
+            currentMX += (targetMX - currentMX) * 0.08;
+            currentMY += (targetMY - currentMY) * 0.08;
+            mainEl.style.transform = `translate3d(${currentMX}px, ${currentMY}px, 0)`;
+        }
+
         for (let i = 0; i < lightBeams.length; i++) lightBeams[i].draw(t);
-        for (let i = 0; i < cubes.length; i++) {
-            cubes[i].update(t);
-            cubes[i].draw();
+        for (let i = 0; i < geometries.length; i++) {
+            geometries[i].update(t);
+            geometries[i].draw();
         }
 
         requestAnimationFrame(animate);

@@ -139,19 +139,19 @@ footer span.placeholder {
 
 @keyframes titleFloat {
     0% {
-        transform: rotateX(18deg) rotateY(-12deg) translate3d(0, 0, 0) rotateZ(-1deg);
+        transform: rotateX(15deg) rotateY(-15deg) translate3d(0, 0, 0) rotateZ(-2deg);
     }
     25% {
-        transform: rotateX(22deg) rotateY(5deg) translate3d(0, -18px, 0) rotateZ(0.5deg);
+        transform: rotateX(25deg) rotateY(10deg) translate3d(0, -25px, 0) rotateZ(1deg);
     }
     50% {
-        transform: rotateX(20deg) rotateY(12deg) translate3d(0, -28px, 0) rotateZ(1deg);
+        transform: rotateX(20deg) rotateY(20deg) translate3d(0, -45px, 0) rotateZ(2deg);
     }
     75% {
-        transform: rotateX(16deg) rotateY(-5deg) translate3d(0, -18px, 0) rotateZ(0.5deg);
+        transform: rotateX(15deg) rotateY(-10deg) translate3d(0, -25px, 0) rotateZ(1deg);
     }
     100% {
-        transform: rotateX(18deg) rotateY(-12deg) translate3d(0, 0, 0) rotateZ(-1deg);
+        transform: rotateX(15deg) rotateY(-15deg) translate3d(0, 0, 0) rotateZ(-2deg);
     }
 }
 
@@ -235,13 +235,13 @@ footer span.placeholder {
     /* 简化动画 */
     @keyframes titleFloatMobile {
         0% {
-            transform: translateY(0) rotateZ(-0.5deg);
+            transform: translateY(0) rotateZ(-1deg);
         }
         50% {
-            transform: translateY(-10px) rotateZ(0.3deg);
+            transform: translateY(-15px) rotateZ(1deg);
         }
         100% {
-            transform: translateY(-18px) rotateZ(-0.5deg);
+            transform: translateY(-30px) rotateZ(-1deg);
         }
     }
 
