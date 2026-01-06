@@ -25,6 +25,7 @@
 
     let geometries = [];
     let lightBeams = [];
+    let gridGround = null;
 
     let vignetteGradient = null;
 
@@ -117,11 +118,11 @@
             }
 
             const approxScale = this.projected[0].scale;
-            const alpha = Math.max(0.18, Math.min(0.75, approxScale));
+            const alpha = Math.max(0.15, Math.min(0.6, approxScale));
 
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = this.color;
-            ctx.lineWidth = Math.max(1, approxScale * 2);
+            ctx.lineWidth = Math.max(1, approxScale * 1.5);
 
             ctx.beginPath();
             for (let i = 0; i < this.edges.length; i += 2) {
@@ -173,6 +174,93 @@
         edges: [0, 2, 0, 3, 0, 4, 0, 5, 1, 2, 1, 3, 1, 4, 1, 5, 2, 4, 4, 3, 3, 5, 5, 2]
     });
 
+    const getSphere = (s) => {
+        const vertices = [];
+        const edges = [];
+        const latCount = 5;
+        const lonCount = 8;
+        for (let i = 0; i <= latCount; i++) {
+            const lat = Math.PI * i / latCount - Math.PI / 2;
+            for (let j = 0; j < lonCount; j++) {
+                const lon = 2 * Math.PI * j / lonCount;
+                vertices.push({
+                    x: s * Math.cos(lat) * Math.cos(lon),
+                    y: s * Math.sin(lat),
+                    z: s * Math.cos(lat) * Math.sin(lon)
+                });
+            }
+        }
+        for (let i = 0; i < latCount; i++) {
+            for (let j = 0; j < lonCount; j++) {
+                const c = i * lonCount + j;
+                const n = i * lonCount + (j + 1) % lonCount;
+                const d = (i + 1) * lonCount + j;
+                edges.push(c, n, c, d);
+            }
+        }
+        return { vertices, edges };
+    };
+
+    class GridGround {
+        constructor() {
+            this.spacing = 100;
+            this.gridWidth = 4000;
+            this.gridDepth = 4000;
+        }
+
+        draw(t) {
+            const groundY = height * 0.85;
+            const moveZ = (t * 120) % this.spacing;
+            
+            ctx.save();
+            ctx.strokeStyle = colors.secondary;
+            ctx.globalAlpha = 0.15;
+            ctx.lineWidth = 1;
+
+            // Horizontal lines
+            for (let z = 0; z <= this.gridDepth; z += this.spacing) {
+                const zPos = z - moveZ;
+                this.drawLine(-this.gridWidth / 2, groundY, zPos, this.gridWidth / 2, groundY, zPos);
+            }
+
+            // Vertical lines
+            for (let x = -this.gridWidth / 2; x <= this.gridWidth / 2; x += this.spacing) {
+                this.drawLine(x, groundY, 0, x, groundY, this.gridDepth);
+            }
+
+            // Light pulse
+            const pulseZ = (t * 400) % this.gridDepth;
+            ctx.strokeStyle = colors.primary;
+            ctx.globalAlpha = 0.3;
+            ctx.lineWidth = 2;
+            this.drawLine(-this.gridWidth / 2, groundY, pulseZ, this.gridWidth / 2, groundY, pulseZ);
+            
+            ctx.restore();
+        }
+
+        drawLine(x1, y1, z1, x2, y2, z2) {
+            const p1 = this.project(x1, y1, z1);
+            const p2 = this.project(x2, y2, z2);
+            if (p1.scale > 0 && p2.scale > 0) {
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+            }
+        }
+
+        project(x, y, z) {
+            const depth = CAMERA_Z + z;
+            if (depth <= 10) return { x: 0, y: 0, scale: -1 };
+            const scale = PROJ_SCALE / depth;
+            return {
+                x: x * scale + width * 0.5,
+                y: (y - height * 0.5) * scale + height * 0.5,
+                scale: scale
+            };
+        }
+    }
+
     class LightBeam {
         constructor(x, direction, color) {
             this.x = x;
@@ -184,7 +272,7 @@
         }
 
         draw(t) {
-            const alpha = 0.06 + (Math.sin(t * this.speed + this.offset) * 0.04 + 0.04);
+            const alpha = 0.05 + (Math.sin(t * this.speed + this.offset) * 0.03 + 0.03);
             const dx = this.direction * (120 + this.width * 3);
 
             const grad = ctx.createLinearGradient(this.x, 0, this.x + dx, height);
@@ -218,7 +306,7 @@
 
         vignetteGradient = ctx.createRadialGradient(width * 0.5, height * 0.5, height * 0.25, width * 0.5, height * 0.5, height * 0.9);
         vignetteGradient.addColorStop(0, 'transparent');
-        vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.75)');
+        vignetteGradient.addColorStop(1, 'rgba(0,0,0,0.8)');
 
         createScene();
     }
@@ -234,29 +322,30 @@
 
         geometries = [];
         lightBeams = [];
+        gridGround = new GridGround();
 
         const palette = [colors.primary, colors.secondary, colors.accent];
-        const factories = [getCube, getTetrahedron, getPyramid, getPrism, getOctahedron];
+        const factories = [getCube, getTetrahedron, getPyramid, getPrism, getOctahedron, getSphere];
 
         for (let i = 0; i < count; i++) {
             const layer = i / (count - 1 || 1);
-            const z = 120 + layer * 520;
+            const z = 100 + layer * 550;
 
-            const spreadX = width * 0.38;
-            const spreadY = height * 0.28;
+            const spreadX = width * 0.4;
+            const spreadY = height * 0.3;
 
             const x = width * 0.5 + (Math.random() * 2 - 1) * spreadX;
-            const y = height * 0.45 + (Math.random() * 2 - 1) * spreadY;
+            const y = height * 0.4 + (Math.random() * 2 - 1) * spreadY;
 
-            const size = sizeBase * (0.75 + Math.random() * 1.35) * (1.05 - layer * 0.35);
+            const size = sizeBase * (0.8 + Math.random() * 1.2) * (1.1 - layer * 0.4);
 
-            const speedMul = mobile ? 0.65 : tablet ? 0.8 : 1;
-            const rotSpeedX = (Math.random() * 0.012 + 0.004) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
-            const rotSpeedY = (Math.random() * 0.012 + 0.004) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
-            const rotSpeedZ = (Math.random() * 0.008 + 0.002) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
+            const speedMul = mobile ? 0.7 : tablet ? 0.85 : 1;
+            const rotSpeedX = (Math.random() * 0.01 + 0.005) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
+            const rotSpeedY = (Math.random() * 0.01 + 0.005) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
+            const rotSpeedZ = (Math.random() * 0.006 + 0.002) * (Math.random() > 0.5 ? 1 : -1) * speedMul;
 
-            const floatAmp = (mobile ? 8 : 14) * (0.6 + Math.random() * 0.9);
-            const floatSpeed = (mobile ? 0.6 : 0.8) + Math.random() * 0.6;
+            const floatAmp = (mobile ? 10 : 15) * (0.7 + Math.random() * 0.8);
+            const floatSpeed = (mobile ? 0.6 : 0.8) + Math.random() * 0.5;
             const floatOffset = Math.random() * Math.PI * 2;
 
             const factory = factories[Math.floor(Math.random() * factories.length)];
@@ -283,7 +372,7 @@
         geometries.sort((a, b) => b.z - a.z);
 
         for (let i = 0; i < beamCount; i++) {
-            const x = (width / beamCount) * (i + 0.3 + Math.random() * 0.4);
+            const x = (width / beamCount) * (i + 0.2 + Math.random() * 0.6);
             const direction = Math.random() > 0.5 ? 1 : -1;
             const color = i % 2 === 0 ? colors.primary : colors.secondary;
             lightBeams.push(new LightBeam(x, direction, color));
@@ -293,7 +382,9 @@
     function drawBackground() {
         ctx.fillStyle = colors.bg;
         ctx.fillRect(0, 0, width, height);
+    }
 
+    function drawVignette() {
         if (vignetteGradient) {
             ctx.fillStyle = vignetteGradient;
             ctx.fillRect(0, 0, width, height);
@@ -304,6 +395,8 @@
         const t = performance.now() * 0.001;
 
         drawBackground();
+        
+        if (gridGround) gridGround.draw(t);
 
         if (mainEl && !isMobile()) {
             currentMX += (targetMX - currentMX) * 0.08;
@@ -316,6 +409,8 @@
             geometries[i].update(t);
             geometries[i].draw();
         }
+
+        drawVignette();
 
         requestAnimationFrame(animate);
     }
