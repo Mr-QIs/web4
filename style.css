@@ -4,12 +4,6 @@
     --accent-color: #ff00c8;
     --bg-color: #0a0e27;
     --text-color: #ffffff;
-    --gold-color: #ffd700;
-    --green-color: #00ff41;
-    --orange-color: #ff6b35;
-    --purple-color: #9d4edd;
-    --cyan-color: #00ffff;
-    --pink-color: #ff006e;
 }
 
 * {
@@ -27,6 +21,7 @@ body, html {
     color: var(--text-color);
 }
 
+/* Canvas必须绝对定位在最底层 */
 #bg-canvas {
     position: fixed;
     top: 0;
@@ -35,8 +30,10 @@ body, html {
     height: 100%;
     z-index: -1;
     pointer-events: none;
+    display: block;
 }
 
+/* 容器在canvas之上 */
 .container {
     position: relative;
     width: 100%;
@@ -46,16 +43,13 @@ body, html {
     justify-content: space-between;
     align-items: center;
     padding: 2rem;
-    perspective: 1000px;
+    z-index: 1;
 }
 
 header {
     text-align: center;
     margin-top: 2rem;
     animation: fadeInDown 1s ease-out;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
 }
 
 .brand {
@@ -80,17 +74,14 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    transform-style: preserve-3d;
 }
 
 .main-title {
     font-size: 5rem;
     font-weight: 900;
     text-transform: uppercase;
-    position: relative;
     color: #fff;
     letter-spacing: 0.2rem;
-    transform: rotateX(20deg) rotateY(-10deg);
     animation: titleFloat 4s ease-in-out infinite alternate;
     text-shadow: 
         0 1px 0 #ccc,
@@ -140,10 +131,10 @@ footer span.placeholder {
 
 @keyframes titleFloat {
     from {
-        transform: rotateX(15deg) rotateY(-15deg) translateY(0);
+        transform: translateY(0);
     }
     to {
-        transform: rotateX(25deg) rotateY(15deg) translateY(-20px);
+        transform: translateY(-20px);
     }
 }
 
@@ -178,18 +169,15 @@ footer span.placeholder {
     }
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .main-title {
         font-size: 3rem;
     }
     .subtitle {
         font-size: 1rem;
-        letter-spacing: 0.2rem;
     }
     footer {
         font-size: 0.7rem;
-        padding: 0 1rem 1rem;
     }
 }
 
