@@ -216,6 +216,26 @@ footer span.placeholder {
             0 0 10px var(--primary-color),
             0 0 20px var(--secondary-color);
     }
+
+    /* 禁用3D动画以节省性能 */
+    .main-title {
+        transform: none !important; /* 移除rotateX/rotateY */
+    }
+
+    /* 简化动画 */
+    @keyframes titleFloat {
+        from {
+            transform: translateY(0);
+        }
+        to {
+            transform: translateY(-10px); /* 减少移动距离 */
+        }
+    }
+
+    /* 关闭will-change，防止过度优化 */
+    * {
+        will-change: auto;
+    }
     
     footer {
         font-size: 0.7rem;

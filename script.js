@@ -1,6 +1,56 @@
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
+// ============ 移动端性能检测 ============
+const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || window.innerWidth < 768;
+};
+
+const isTablet = () => {
+    return window.innerWidth >= 768 && window.innerWidth < 1024;
+};
+
+const isMobile = isMobileDevice();
+const isTabletDevice = isTablet();
+
+// 根据设备类型调整性能参数
+let performanceSettings = {
+    particleCount: 150,      // 默认桌面端
+    geometricShapeCount: 6,
+    lightBeamCount: 5,
+    glowingOrbCount: 8,
+    particleSize: 3,
+    shapeSize: 60
+};
+
+if (isMobile) {
+    // 手机端：最大程度优化
+    performanceSettings = {
+        particleCount: 80,       // 减少50%
+        geometricShapeCount: 3,  // 减少50%
+        lightBeamCount: 2,       // 减少60%
+        glowingOrbCount: 3,      // 减少60%
+        particleSize: 2,         // 减小
+        shapeSize: 40            // 减小
+    };
+    console.log('✓ 移动端性能模式启用');
+} else if (isTabletDevice) {
+    // 平板端：中度优化
+    performanceSettings = {
+        particleCount: 120,
+        geometricShapeCount: 4,
+        lightBeamCount: 3,
+        glowingOrbCount: 5,
+        particleSize: 2.5,
+        shapeSize: 50
+    };
+    console.log('✓ 平板端性能模式启用');
+} else {
+    // 桌面端：高质量
+    console.log('✓ 桌面端高质量模式启用');
+}
+
 let width, height;
 let particles = [];
 let geometricShapes = [];
@@ -71,7 +121,7 @@ class Particle {
         this.vx = (Math.random() - 0.5) * 0.3;
         this.vy = (Math.random() - 0.5) * 0.3;
         this.vz = -Math.random() * 3 - 1;
-        this.size = Math.random() * 3 + 1;
+        this.size = Math.random() * performanceSettings.particleSize + 1;
         this.color = Math.random() > 0.6 ? colors.primary : 
                       Math.random() > 0.3 ? colors.secondary : colors.accent;
         this.alpha = Math.random() * 0.5 + 0.3;
@@ -755,7 +805,7 @@ class GlowingOrb {
 
 function createParticles() {
     particles = [];
-    const count = Math.floor((width * height) / 8000) + 150;
+    const count = performanceSettings.particleCount;
     for (let i = 0; i < count; i++) {
         particles.push(new Particle());
     }
@@ -764,24 +814,20 @@ function createParticles() {
 function createGeometricShapes() {
     geometricShapes = [];
     
-    // Create various geometric shapes - enhanced with more types
-    const shapeConfigs = [
-        { type: 'cube', x: width * 0.15, y: height * 0.3, z: 300, size: 60, color: colors.primary },
-        { type: 'pyramid', x: width * 0.85, y: height * 0.4, z: 400, size: 70, color: colors.secondary },
-        { type: 'octahedron', x: width * 0.75, y: height * 0.25, z: 200, size: 50, color: colors.accent },
-        { type: 'diamond', x: width * 0.2, y: height * 0.5, z: 500, size: 55, color: colors.primary },
-        { type: 'cube', x: width * 0.6, y: height * 0.6, z: 350, size: 45, color: colors.secondary },
-        { type: 'octahedron', x: width * 0.4, y: height * 0.35, z: 450, size: 65, color: colors.accent },
-        // New shapes
-        { type: 'dodecahedron', x: width * 0.3, y: height * 0.2, z: 250, size: 40, color: colors.gold },
-        { type: 'icosahedron', x: width * 0.9, y: height * 0.7, z: 380, size: 35, color: colors.green },
-        { type: 'tetrahedron', x: width * 0.1, y: height * 0.8, z: 420, size: 50, color: colors.orange },
-        { type: 'hexagonal', x: width * 0.7, y: height * 0.15, z: 320, size: 45, color: colors.purple },
-        { type: 'dodecahedron', x: width * 0.55, y: height * 0.75, z: 480, size: 38, color: colors.cyan },
-        { type: 'icosahedron', x: width * 0.25, y: height * 0.65, z: 280, size: 42, color: colors.pink }
+    // 根据性能设置调整数量
+    const shapeCount = performanceSettings.geometricShapeCount;
+    const shapeSize = performanceSettings.shapeSize;
+    const configs = [
+        { type: 'cube', x: width * 0.15, y: height * 0.3, z: 300, size: shapeSize, color: colors.primary },
+        { type: 'pyramid', x: width * 0.85, y: height * 0.4, z: 400, size: shapeSize + 10, color: colors.secondary },
+        { type: 'octahedron', x: width * 0.75, y: height * 0.25, z: 200, size: shapeSize - 10, color: colors.accent },
+        { type: 'diamond', x: width * 0.2, y: height * 0.5, z: 500, size: shapeSize - 5, color: colors.primary },
+        { type: 'cube', x: width * 0.6, y: height * 0.6, z: 350, size: shapeSize - 15, color: colors.secondary },
+        { type: 'octahedron', x: width * 0.4, y: height * 0.35, z: 450, size: shapeSize + 5, color: colors.accent },
     ];
 
-    shapeConfigs.forEach(config => {
+    for (let i = 0; i < Math.min(shapeCount, configs.length); i++) {
+        const config = configs[i];
         geometricShapes.push(new GeometricShape(
             config.type,
             config.x,
@@ -795,17 +841,16 @@ function createGeometricShapes() {
             },
             config.color
         ));
-    });
+    }
 }
 
 function createLightBeams() {
     lightBeams = [];
-    const beamCount = 8; // Increased for more dynamic effect
+    const beamCount = performanceSettings.lightBeamCount;
     for (let i = 0; i < beamCount; i++) {
         const x = (width / beamCount) * i + Math.random() * 100;
         const direction = Math.random() > 0.5 ? 1 : -1;
-        const colorChoices = [colors.primary, colors.secondary, colors.accent, colors.gold, colors.green];
-        const color = colorChoices[i % colorChoices.length];
+        const color = Math.random() > 0.5 ? colors.primary : colors.secondary;
         lightBeams.push(new LightBeam(x, direction, color));
     }
 }
@@ -843,7 +888,7 @@ function createWaveRipple() {
 
 function createGlowingOrbs() {
     glowingOrbs = [];
-    const orbCount = 10; // Increased for more dynamic effect
+    const orbCount = performanceSettings.glowingOrbCount;
     for (let i = 0; i < orbCount; i++) {
         glowingOrbs.push(new GlowingOrb(i, orbCount));
     }
