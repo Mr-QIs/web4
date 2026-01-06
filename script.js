@@ -5,14 +5,25 @@ let width, height;
 let particles = [];
 let geometricShapes = [];
 let lightBeams = [];
+let starField = [];
+let energyClouds = [];
+let scanlineEffect;
+let waveRipple;
+let glowingOrbs = [];
 let time = 0;
 
-// Color palette
+// Enhanced Color palette
 const colors = {
     primary: '#00f2ff',
     secondary: '#7000ff',
     accent: '#ff00c8',
-    bg: '#050505'
+    bg: '#050505',
+    gold: '#ffd700',
+    green: '#00ff41',
+    orange: '#ff6b35',
+    purple: '#9d4edd',
+    cyan: '#00ffff',
+    pink: '#ff006e'
 };
 
 function init() {
@@ -20,6 +31,11 @@ function init() {
     createParticles();
     createGeometricShapes();
     createLightBeams();
+    createStarField();
+    createEnergyClouds();
+    createScanlineEffect();
+    createWaveRipple();
+    createGlowingOrbs();
     animate();
 }
 
@@ -35,6 +51,11 @@ function recreateElements() {
     createParticles();
     createGeometricShapes();
     createLightBeams();
+    createStarField();
+    createEnergyClouds();
+    createScanlineEffect();
+    createWaveRipple();
+    createGlowingOrbs();
 }
 
 // Particle class with enhanced effects
@@ -178,6 +199,43 @@ class GeometricShape {
                 const angle = (i / 4) * Math.PI * 2;
                 v.push({ x: Math.cos(angle) * s * 0.7, y: 0, z: Math.sin(angle) * s * 0.7 });
             }
+        } else if (this.type === 'dodecahedron') {
+            // Dodecahedron vertices (simplified version)
+            const phi = (1 + Math.sqrt(5)) / 2;
+            const coords = [
+                [1, 1, 1], [1, 1, -1], [1, -1, 1], [1, -1, -1],
+                [-1, 1, 1], [-1, 1, -1], [-1, -1, 1], [-1, -1, -1],
+                [0, 1/phi, phi], [0, 1/phi, -phi], [0, -1/phi, phi], [0, -1/phi, -phi],
+                [1/phi, phi, 0], [1/phi, -phi, 0], [-1/phi, phi, 0], [-1/phi, -phi, 0],
+                [phi, 0, 1/phi], [phi, 0, -1/phi], [-phi, 0, 1/phi], [-phi, 0, -1/phi]
+            ];
+            coords.forEach(coord => {
+                v.push({ x: coord[0] * s * 0.8, y: coord[1] * s * 0.8, z: coord[2] * s * 0.8 });
+            });
+        } else if (this.type === 'icosahedron') {
+            // Icosahedron vertices
+            const phi = (1 + Math.sqrt(5)) / 2;
+            const coords = [
+                [0, 1, phi], [0, -1, phi], [0, 1, -phi], [0, -1, -phi],
+                [1, phi, 0], [-1, phi, 0], [1, -phi, 0], [-1, -phi, 0],
+                [phi, 0, 1], [phi, 0, -1], [-phi, 0, 1], [-phi, 0, -1]
+            ];
+            coords.forEach(coord => {
+                v.push({ x: coord[0] * s * 0.8, y: coord[1] * s * 0.8, z: coord[2] * s * 0.8 });
+            });
+        } else if (this.type === 'tetrahedron') {
+            // Tetrahedron vertices
+            v.push({ x: s, y: s, z: s });
+            v.push({ x: -s, y: -s, z: s });
+            v.push({ x: -s, y: s, z: -s });
+            v.push({ x: s, y: -s, z: -s });
+        } else if (this.type === 'hexagonal') {
+            // Hexagonal prism
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                v.push({ x: Math.cos(angle) * s, y: s, z: Math.sin(angle) * s });
+                v.push({ x: Math.cos(angle) * s, y: -s, z: Math.sin(angle) * s });
+            }
         }
 
         return v;
@@ -207,6 +265,53 @@ class GeometricShape {
             for (let i = 1; i < v.length; i++) {
                 const next = i === v.length - 1 ? 1 : i + 1;
                 edges.push([v[i], v[next]]);
+            }
+        } else if (this.type === 'dodecahedron') {
+            // Dodecahedron edges (simplified - connect nearest vertices)
+            for (let i = 0; i < v.length; i++) {
+                for (let j = i + 1; j < v.length; j++) {
+                    const dist = Math.sqrt(
+                        Math.pow(v[i].x - v[j].x, 2) + 
+                        Math.pow(v[i].y - v[j].y, 2) + 
+                        Math.pow(v[i].z - v[j].z, 2)
+                    );
+                    if (dist < 2.5 * this.size) {
+                        edges.push([v[i], v[j]]);
+                    }
+                }
+            }
+        } else if (this.type === 'icosahedron') {
+            // Icosahedron edges
+            for (let i = 0; i < v.length; i++) {
+                for (let j = i + 1; j < v.length; j++) {
+                    const dist = Math.sqrt(
+                        Math.pow(v[i].x - v[j].x, 2) + 
+                        Math.pow(v[i].y - v[j].y, 2) + 
+                        Math.pow(v[i].z - v[j].z, 2)
+                    );
+                    if (dist < 2.8 * this.size) {
+                        edges.push([v[i], v[j]]);
+                    }
+                }
+            }
+        } else if (this.type === 'tetrahedron') {
+            // Tetrahedron edges
+            edges.push([v[0], v[1]]);
+            edges.push([v[0], v[2]]);
+            edges.push([v[0], v[3]]);
+            edges.push([v[1], v[2]]);
+            edges.push([v[1], v[3]]);
+            edges.push([v[2], v[3]]);
+        } else if (this.type === 'hexagonal') {
+            // Hexagonal prism edges
+            for (let i = 0; i < 6; i++) {
+                const next = (i + 1) % 6;
+                // Top hexagon
+                edges.push([v[i * 2], v[next * 2]]);
+                // Bottom hexagon
+                edges.push([v[i * 2 + 1], v[next * 2 + 1]]);
+                // Vertical edges
+                edges.push([v[i * 2], v[i * 2 + 1]]);
             }
         }
 
@@ -332,6 +437,322 @@ class LightBeam {
     }
 }
 
+// Star Field class
+class Star {
+    constructor() {
+        this.reset();
+    }
+
+    reset() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.z = Math.random() * 2000 + 500;
+        this.vx = (Math.random() - 0.5) * 0.1;
+        this.vy = (Math.random() - 0.5) * 0.1;
+        this.vz = -Math.random() * 2 - 0.5;
+        this.size = Math.random() * 2 + 0.5;
+        this.color = Math.random() > 0.7 ? colors.cyan : 
+                      Math.random() > 0.4 ? colors.primary : colors.gold;
+        this.alpha = Math.random() * 0.8 + 0.2;
+        this.twinkleSpeed = 0.02 + Math.random() * 0.03;
+        this.twinkleOffset = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.z += this.vz;
+
+        if (this.z < 50 || this.x < -50 || this.x > width + 50 || 
+            this.y < -50 || this.y > height + 50) {
+            this.reset();
+            this.z = 2500;
+        }
+    }
+
+    draw() {
+        const scale = 1000 / (1000 + this.z);
+        const x2d = (this.x - width / 2) * scale + width / 2;
+        const y2d = (this.y - height / 2) * scale + height / 2;
+        const size = this.size * scale;
+
+        // Twinkling effect
+        const twinkle = Math.sin(time * this.twinkleSpeed + this.twinkleOffset) * 0.3 + 0.7;
+        
+        ctx.globalAlpha = this.alpha * twinkle * scale;
+        
+        // Star glow
+        const gradient = ctx.createRadialGradient(x2d, y2d, 0, x2d, y2d, size * 2);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.3, this.color + 'aa');
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, size * 2, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Star core
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, size, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        
+        ctx.globalAlpha = 1;
+    }
+}
+
+// Energy Cloud Particle class
+class EnergyParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.size = Math.random() * 8 + 2;
+        this.color = Math.random() > 0.6 ? colors.purple : 
+                      Math.random() > 0.3 ? colors.cyan : colors.accent;
+        this.alpha = Math.random() * 0.4 + 0.2;
+        this.life = Math.random() * 100 + 50;
+        this.maxLife = this.life;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        
+        // Fade out over time
+        this.alpha = (this.life / this.maxLife) * 0.4;
+        
+        // Slow down over time
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+    }
+
+    draw() {
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+        gradient.addColorStop(0, this.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(0.5, this.color + Math.floor(this.alpha * 128).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// Energy Cloud class
+class EnergyCloud {
+    constructor(x, y, radius) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.particles = [];
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = 0.01 + Math.random() * 0.02;
+        this.colorShift = 0;
+        
+        // Create particles
+        for (let i = 0; i < 30; i++) {
+            const angle = (i / 30) * Math.PI * 2;
+            const r = Math.random() * radius;
+            const px = x + Math.cos(angle) * r;
+            const py = y + Math.sin(angle) * r;
+            this.particles.push(new EnergyParticle(px, py));
+        }
+    }
+
+    update() {
+        this.angle += this.speed;
+        this.colorShift += 0.01;
+        
+        // Update particles with orbital motion
+        this.particles.forEach((particle, i) => {
+            const orbitalAngle = this.angle + (i / this.particles.length) * Math.PI * 2;
+            const orbitalRadius = this.radius * (0.7 + Math.sin(time * 0.5 + i) * 0.3);
+            
+            particle.x = this.x + Math.cos(orbitalAngle) * orbitalRadius;
+            particle.y = this.y + Math.sin(orbitalAngle) * orbitalRadius;
+            
+            particle.update();
+            
+            // Respawn particles if they die
+            if (particle.life <= 0) {
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * this.radius;
+                particle.x = this.x + Math.cos(angle) * r;
+                particle.y = this.y + Math.sin(angle) * r;
+                particle.life = particle.maxLife;
+                particle.alpha = Math.random() * 0.4 + 0.2;
+            }
+        });
+    }
+
+    draw() {
+        this.particles.forEach(particle => particle.draw());
+    }
+}
+
+// Scanline Effect class
+class ScanlineEffect {
+    constructor() {
+        this.offset = 0;
+        this.speed = 2 + Math.random() * 3;
+        this.intensity = 0.1 + Math.random() * 0.15;
+    }
+
+    update() {
+        this.offset += this.speed;
+    }
+
+    draw() {
+        ctx.save();
+        
+        // Create scanline pattern
+        const lineHeight = 2;
+        const pattern = ctx.createLinearGradient(0, 0, 0, lineHeight);
+        pattern.addColorStop(0, `rgba(255, 255, 255, ${this.intensity * 0.1})`);
+        pattern.addColorStop(0.5, `rgba(255, 255, 255, ${this.intensity * 0.3})`);
+        pattern.addColorStop(1, `rgba(255, 255, 255, ${this.intensity * 0.1})`);
+        
+        ctx.fillStyle = pattern;
+        
+        // Draw moving scanlines
+        for (let y = -lineHeight; y < height + lineHeight; y += lineHeight * 4) {
+            const yPos = y + (this.offset % (lineHeight * 4));
+            ctx.fillRect(0, yPos, width, lineHeight);
+        }
+        
+        ctx.restore();
+    }
+}
+
+// Wave Ripple class
+class WaveRipple {
+    constructor() {
+        this.x = width / 2;
+        this.y = height / 2;
+        this.radius = 0;
+        this.maxRadius = Math.max(width, height) * 1.5;
+        this.speed = 8;
+        this.intensity = 0;
+        this.delay = 0;
+        this.active = false;
+    }
+
+    trigger(delay = 0) {
+        this.delay = delay;
+        this.radius = 0;
+        this.intensity = 1;
+        this.active = true;
+    }
+
+    update() {
+        if (!this.active) return;
+        
+        if (this.delay > 0) {
+            this.delay--;
+            return;
+        }
+        
+        this.radius += this.speed;
+        this.intensity = Math.max(0, 1 - (this.radius / this.maxRadius));
+        
+        if (this.radius >= this.maxRadius || this.intensity <= 0.01) {
+            this.active = false;
+        }
+    }
+
+    draw() {
+        if (!this.active || this.intensity <= 0) return;
+        
+        ctx.save();
+        
+        const rippleCount = 3;
+        for (let i = 0; i < rippleCount; i++) {
+            const r = this.radius - (i * 30);
+            const alpha = this.intensity * (0.5 - i * 0.15);
+            
+            if (r > 0 && alpha > 0.01) {
+                ctx.strokeStyle = `rgba(0, 242, 255, ${alpha})`;
+                ctx.lineWidth = 2 + i;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = colors.primary;
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        ctx.restore();
+    }
+}
+
+// Enhanced Glowing Orb class
+class GlowingOrb {
+    constructor(index, total) {
+        this.index = index;
+        this.total = total;
+        this.angle = (index / total) * Math.PI * 2;
+        this.radiusX = width * 0.35;
+        this.radiusY = height * 0.25;
+        this.speed = 0.3 + Math.random() * 0.2;
+        this.size = 100 + Math.random() * 50;
+        this.colorIndex = index % 6;
+        this.colors = [colors.primary, colors.secondary, colors.accent, colors.gold, colors.green, colors.purple];
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.floatOffset = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+        this.angle += this.speed * 0.01;
+    }
+
+    draw() {
+        const x = width / 2 + Math.cos(this.angle) * this.radiusX;
+        const y = height / 2 + Math.sin(this.angle) * this.radiusY + Math.sin(time + this.floatOffset) * 20;
+        
+        const pulse = 1 + Math.sin(time * 2 + this.pulsePhase) * 0.2;
+        const size = this.size * pulse;
+        const color = this.colors[this.colorIndex];
+        
+        // Multiple glow layers
+        const gradients = [
+            { size: size * 0.5, alpha: 0.3 },
+            { size: size * 1.2, alpha: 0.15 },
+            { size: size * 2, alpha: 0.08 }
+        ];
+        
+        gradients.forEach((gradient, i) => {
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, gradient.size);
+            grad.addColorStop(0, `${color}${Math.floor(gradient.alpha * 255).toString(16).padStart(2, '0')}`);
+            grad.addColorStop(0.7, `${color}${Math.floor(gradient.alpha * 100).toString(16).padStart(2, '0')}`);
+            grad.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, gradient.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        // Core orb
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = `${color}60`;
+        ctx.fill();
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+}
+
 function createParticles() {
     particles = [];
     const count = Math.floor((width * height) / 8000) + 150;
@@ -343,7 +764,7 @@ function createParticles() {
 function createGeometricShapes() {
     geometricShapes = [];
     
-    // Create various geometric shapes
+    // Create various geometric shapes - enhanced with more types
     const shapeConfigs = [
         { type: 'cube', x: width * 0.15, y: height * 0.3, z: 300, size: 60, color: colors.primary },
         { type: 'pyramid', x: width * 0.85, y: height * 0.4, z: 400, size: 70, color: colors.secondary },
@@ -351,6 +772,13 @@ function createGeometricShapes() {
         { type: 'diamond', x: width * 0.2, y: height * 0.5, z: 500, size: 55, color: colors.primary },
         { type: 'cube', x: width * 0.6, y: height * 0.6, z: 350, size: 45, color: colors.secondary },
         { type: 'octahedron', x: width * 0.4, y: height * 0.35, z: 450, size: 65, color: colors.accent },
+        // New shapes
+        { type: 'dodecahedron', x: width * 0.3, y: height * 0.2, z: 250, size: 40, color: colors.gold },
+        { type: 'icosahedron', x: width * 0.9, y: height * 0.7, z: 380, size: 35, color: colors.green },
+        { type: 'tetrahedron', x: width * 0.1, y: height * 0.8, z: 420, size: 50, color: colors.orange },
+        { type: 'hexagonal', x: width * 0.7, y: height * 0.15, z: 320, size: 45, color: colors.purple },
+        { type: 'dodecahedron', x: width * 0.55, y: height * 0.75, z: 480, size: 38, color: colors.cyan },
+        { type: 'icosahedron', x: width * 0.25, y: height * 0.65, z: 280, size: 42, color: colors.pink }
     ];
 
     shapeConfigs.forEach(config => {
@@ -372,31 +800,74 @@ function createGeometricShapes() {
 
 function createLightBeams() {
     lightBeams = [];
-    const beamCount = 5;
+    const beamCount = 8; // Increased for more dynamic effect
     for (let i = 0; i < beamCount; i++) {
         const x = (width / beamCount) * i + Math.random() * 100;
         const direction = Math.random() > 0.5 ? 1 : -1;
-        const color = Math.random() > 0.5 ? colors.primary : colors.secondary;
+        const colorChoices = [colors.primary, colors.secondary, colors.accent, colors.gold, colors.green];
+        const color = colorChoices[i % colorChoices.length];
         lightBeams.push(new LightBeam(x, direction, color));
+    }
+}
+
+function createStarField() {
+    starField = [];
+    const starCount = Math.floor((width * height) / 12000) + 200;
+    for (let i = 0; i < starCount; i++) {
+        starField.push(new Star());
+    }
+}
+
+function createEnergyClouds() {
+    energyClouds = [];
+    const cloudCount = 4;
+    for (let i = 0; i < cloudCount; i++) {
+        const x = width * (0.2 + Math.random() * 0.6);
+        const y = height * (0.2 + Math.random() * 0.6);
+        const radius = 80 + Math.random() * 120;
+        energyClouds.push(new EnergyCloud(x, y, radius));
+    }
+}
+
+function createScanlineEffect() {
+    scanlineEffect = new ScanlineEffect();
+}
+
+function createWaveRipple() {
+    waveRipple = new WaveRipple();
+    // Trigger initial ripple
+    setTimeout(() => waveRipple.trigger(), 1000);
+    // Trigger periodic ripples
+    setInterval(() => waveRipple.trigger(Math.random() * 60), 8000);
+}
+
+function createGlowingOrbs() {
+    glowingOrbs = [];
+    const orbCount = 10; // Increased for more dynamic effect
+    for (let i = 0; i < orbCount; i++) {
+        glowingOrbs.push(new GlowingOrb(i, orbCount));
     }
 }
 
 function drawPerspectiveFloor() {
     const horizonY = height * 0.65;
-    const gridLines = 20;
-    const verticalLines = 30;
+    const gridLines = 25; // Increased for more detail
+    const verticalLines = 35; // Increased for more detail
     
-    // Draw perspective grid
-    ctx.strokeStyle = `${colors.secondary}30`;
+    // Enhanced perspective grid with dynamic colors
+    ctx.strokeStyle = `${colors.secondary}40`;
     ctx.lineWidth = 1;
 
     // Horizontal lines (perspective)
     for (let i = 0; i < gridLines; i++) {
         const progress = i / gridLines;
         const y = horizonY + Math.pow(progress, 2) * (height - horizonY);
-        const alpha = 0.1 + progress * 0.2;
+        const alpha = 0.15 + progress * 0.25;
         
-        ctx.strokeStyle = `${colors.secondary}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+        const colorShift = Math.sin(time * 2 + progress * 10) * 0.5 + 0.5;
+        const color = colorShift > 0.5 ? colors.secondary : colors.primary;
+        
+        ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -407,23 +878,38 @@ function drawPerspectiveFloor() {
     const centerX = width / 2;
     for (let i = -verticalLines / 2; i < verticalLines / 2; i++) {
         const angle = i * 0.05;
-        const alpha = 0.05 + Math.abs(i) / (verticalLines / 2) * 0.15;
+        const alpha = 0.08 + Math.abs(i) / (verticalLines / 2) * 0.2;
         
-        ctx.strokeStyle = `${colors.primary}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+        const colorShift = Math.cos(time * 1.5 + i * 0.3) * 0.5 + 0.5;
+        const color = colorShift > 0.5 ? colors.accent : colors.cyan;
+        
+        ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
         ctx.beginPath();
         ctx.moveTo(centerX + Math.sin(angle) * 100, horizonY);
         ctx.lineTo(centerX + Math.sin(angle) * width * 0.8, height);
         ctx.stroke();
     }
 
-    // Horizon glow
-    const horizonGradient = ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 100);
+    // Enhanced horizon glow with multiple layers
+    const horizonGradient = ctx.createLinearGradient(0, horizonY - 150, 0, horizonY + 150);
     horizonGradient.addColorStop(0, 'transparent');
-    horizonGradient.addColorStop(0.5, `${colors.primary}20`);
+    horizonGradient.addColorStop(0.3, `${colors.primary}30`);
+    horizonGradient.addColorStop(0.5, `${colors.secondary}40`);
+    horizonGradient.addColorStop(0.7, `${colors.accent}30`);
     horizonGradient.addColorStop(1, 'transparent');
     
     ctx.fillStyle = horizonGradient;
-    ctx.fillRect(0, horizonY - 100, width, 200);
+    ctx.fillRect(0, horizonY - 150, width, 300);
+    
+    // Additional pulse effect at horizon
+    const pulseIntensity = Math.sin(time * 3) * 0.3 + 0.7;
+    const pulseGradient = ctx.createLinearGradient(0, horizonY - 50, 0, horizonY + 50);
+    pulseGradient.addColorStop(0, 'transparent');
+    pulseGradient.addColorStop(0.5, `${colors.gold}${Math.floor(pulseIntensity * 100).toString(16).padStart(2, '0')}`);
+    pulseGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = pulseGradient;
+    ctx.fillRect(0, horizonY - 50, width, 100);
 }
 
 function drawHexagonPattern() {
@@ -437,67 +923,55 @@ function drawHexagonPattern() {
             const x = col * hexSize * 1.5;
             const y = row * hexHeight + (col % 2 === 0 ? 0 : hexHeight / 2);
             
-            // Offset by time for movement
-            const offsetX = (time * 20) % (hexSize * 1.5);
-            const offsetY = (time * 10) % hexHeight;
+            // Enhanced movement with wave distortion
+            const waveDistortion = Math.sin(time * 2 + row * 0.3) * 20;
+            const offsetX = (time * 20) % (hexSize * 1.5) + waveDistortion;
+            const offsetY = (time * 10) % hexHeight + Math.cos(time * 1.5 + col * 0.3) * 15;
             
             const finalX = x - offsetX;
             const finalY = y + offsetY;
 
+            // Deformation based on distance and time
             const distFromCenter = Math.sqrt(
                 Math.pow(finalX - width / 2, 2) + 
                 Math.pow(finalY - height / 2, 2)
             );
             
-            const alpha = Math.max(0, 0.1 - distFromCenter / (width * 0.8)) * 
-                         (0.5 + Math.sin(time * 2 + distFromCenter * 0.01) * 0.3);
+            const deformFactor = 1 + Math.sin(time * 3 + distFromCenter * 0.01) * 0.3;
+            const alpha = Math.max(0, 0.15 - distFromCenter / (width * 0.8)) * 
+                         (0.6 + Math.sin(time * 2 + distFromCenter * 0.01) * 0.4);
 
             if (alpha > 0.01) {
-                drawHexagon(finalX, finalY, hexSize, alpha);
+                drawDeformedHexagon(finalX, finalY, hexSize * deformFactor, alpha, distFromCenter);
             }
         }
     }
 }
 
-function drawHexagon(x, y, size, alpha) {
-    ctx.strokeStyle = `${colors.accent}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
-    ctx.lineWidth = 1;
+function drawDeformedHexagon(x, y, size, alpha, distance) {
+    const colorShift = Math.sin(time * 2 + distance * 0.005) * 0.5 + 0.5;
+    const color = colorShift > 0.5 ? colors.accent : colors.primary;
+    
+    ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+    ctx.lineWidth = 1 + Math.sin(time * 4 + distance * 0.01) * 0.5;
+
+    // Add subtle glow effect
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = color;
 
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
-        const angle = (i / 6) * Math.PI * 2 - Math.PI / 6;
-        const px = x + Math.cos(angle) * size;
-        const py = y + Math.sin(angle) * size;
+        const angle = (i / 6) * Math.PI * 2 - Math.PI / 6 + Math.sin(time * 2 + i) * 0.1;
+        const deformSize = size * (1 + Math.sin(time * 3 + i) * 0.2);
+        const px = x + Math.cos(angle) * deformSize;
+        const py = y + Math.sin(angle) * deformSize;
         if (i === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
     }
     ctx.closePath();
     ctx.stroke();
-}
-
-function drawGlowingOrbs() {
-    const orbCount = 8;
-    for (let i = 0; i < orbCount; i++) {
-        const angle = (i / orbCount) * Math.PI * 2 + time * 0.3;
-        const radiusX = width * 0.35;
-        const radiusY = height * 0.25;
-        
-        const x = width / 2 + Math.cos(angle) * radiusX;
-        const y = height / 2 + Math.sin(angle) * radiusY;
-        
-        const size = 100 + Math.sin(time * 2 + i) * 30;
-        const color = i % 2 === 0 ? colors.primary : colors.secondary;
-        
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-        gradient.addColorStop(0, `${color}20`);
-        gradient.addColorStop(0.5, `${color}10`);
-        gradient.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    
+    ctx.shadowBlur = 0;
 }
 
 function drawVignette() {
@@ -519,11 +993,35 @@ function animate() {
     ctx.fillStyle = `${colors.bg}f0`;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw background elements
+    // Draw background elements in order for proper layering
     drawHexagonPattern();
-    drawGlowingOrbs();
-    drawLightBeams();
     drawPerspectiveFloor();
+    
+    // Update and draw all effects
+    if (scanlineEffect) {
+        scanlineEffect.update();
+        scanlineEffect.draw();
+    }
+    
+    if (waveRipple) {
+        waveRipple.update();
+        waveRipple.draw();
+    }
+    
+    // Draw energy clouds
+    energyClouds.forEach(cloud => {
+        cloud.update();
+        cloud.draw();
+    });
+    
+    // Draw star field
+    starField.forEach(star => {
+        star.update();
+        star.draw();
+    });
+
+    // Draw light beams
+    lightBeams.forEach(beam => beam.draw());
 
     // Draw geometric shapes (sorted by z for proper depth)
     geometricShapes.sort((a, b) => b.z - a.z);
@@ -536,6 +1034,12 @@ function animate() {
     particles.forEach(p => {
         p.update();
         p.draw();
+    });
+
+    // Draw enhanced glowing orbs
+    glowingOrbs.forEach(orb => {
+        orb.update();
+        orb.draw();
     });
 
     // Apply vignette
