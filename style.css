@@ -2,8 +2,14 @@
     --primary-color: #00f2ff;
     --secondary-color: #7000ff;
     --accent-color: #ff00c8;
-    --bg-color: #0a0e27;
+    --bg-color: #050505;
     --text-color: #ffffff;
+    --gold-color: #ffd700;
+    --green-color: #00ff41;
+    --orange-color: #ff6b35;
+    --purple-color: #9d4edd;
+    --cyan-color: #00ffff;
+    --pink-color: #ff006e;
 }
 
 * {
@@ -20,7 +26,6 @@ body, html {
     color: var(--text-color);
 }
 
-/* Canvas必须绝对定位在最底层 */
 #bg-canvas {
     position: fixed;
     top: 0;
@@ -29,10 +34,8 @@ body, html {
     height: 100%;
     z-index: -1;
     pointer-events: none;
-    display: block;
 }
 
-/* 容器在canvas之上 */
 .container {
     position: relative;
     width: 100%;
@@ -42,13 +45,16 @@ body, html {
     justify-content: space-between;
     align-items: center;
     padding: 2rem;
-    z-index: 1;
+    perspective: 1000px;
 }
 
 header {
     text-align: center;
     margin-top: 2rem;
     animation: fadeInDown 1s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .brand {
@@ -73,14 +79,17 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
+    transform-style: preserve-3d;
 }
 
 .main-title {
     font-size: 5rem;
     font-weight: 900;
     text-transform: uppercase;
+    position: relative;
     color: #fff;
     letter-spacing: 0.2rem;
+    transform: rotateX(20deg) rotateY(-10deg);
     animation: titleFloat 4s ease-in-out infinite alternate;
     text-shadow: 
         0 1px 0 #ccc,
@@ -130,10 +139,10 @@ footer span.placeholder {
 
 @keyframes titleFloat {
     from {
-        transform: translateY(0);
+        transform: rotateX(15deg) rotateY(-15deg) translateY(0);
     }
     to {
-        transform: translateY(-20px);
+        transform: rotateX(25deg) rotateY(15deg) translateY(-20px);
     }
 }
 
@@ -168,7 +177,10 @@ footer span.placeholder {
     }
 }
 
+/* ============ 移动端性能优化 ============ */
+
 @media (max-width: 1024px) {
+    /* 平板设备 */
     .brand {
         font-size: 1.2rem;
     }
@@ -183,6 +195,7 @@ footer span.placeholder {
 }
 
 @media (max-width: 768px) {
+    /* 平板竖屏/小屏幕 */
     .container {
         padding: 1.5rem;
     }
@@ -198,6 +211,10 @@ footer span.placeholder {
     .main-title {
         font-size: 3rem;
         letter-spacing: 0.1rem;
+        /* 简化阴影，减少性能负担 */
+        text-shadow: 
+            0 0 10px var(--primary-color),
+            0 0 20px var(--secondary-color);
     }
     
     footer {
@@ -206,14 +223,15 @@ footer span.placeholder {
 }
 
 @media (max-width: 480px) {
+    /* 手机设备 */
     header {
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 
     .container {
         padding: 1rem;
         justify-content: flex-start;
-        padding-top: 1rem;
+        padding-top: 0.5rem;
     }
 
     .brand {
@@ -234,26 +252,27 @@ footer span.placeholder {
     .main-title {
         font-size: 2rem;
         letter-spacing: 0.05rem;
+        /* 移动端简化阴影 */
         text-shadow: 
-            0 0 5px rgba(0,0,0,.1),
             0 0 10px var(--primary-color),
-            0 0 20px var(--secondary-color);
+            0 0 15px var(--secondary-color);
     }
 
     footer {
         font-size: 0.65rem;
-        padding: 1rem 0;
+        padding: 0.5rem 0;
     }
 
     footer p {
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
+        line-height: 1.3;
     }
 }
 
-/* 超小屏幕 */
 @media (max-width: 360px) {
+    /* 超小屏幕 */
     .main-title {
         font-size: 1.5rem;
     }
@@ -264,5 +283,28 @@ footer span.placeholder {
 
     footer {
         font-size: 0.6rem;
+    }
+
+    .container {
+        padding: 0.8rem;
+    }
+}
+
+/* ============ 动画性能优化 ============ */
+
+/* 减少在低配置设备上的动画复杂度 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 手机端关闭某些重型动画 */
+@media (max-width: 768px) {
+    .main-title::before {
+        /* 简化blur效果 */
+        filter: blur(4px);
     }
 }
