@@ -23,7 +23,6 @@ body, html {
     height: 100%;
     overflow: hidden;
     font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--bg-color);
     color: var(--text-color);
 }
 
@@ -178,28 +177,134 @@ footer span.placeholder {
     }
 }
 
-/* Responsive adjustments */
+/* ============ 移动端性能优化 ============ */
+
+@media (max-width: 1024px) {
+    /* 平板设备 */
+    .brand {
+        font-size: 1.2rem;
+    }
+    
+    .subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .main-title {
+        font-size: 4rem;
+    }
+}
+
 @media (max-width: 768px) {
+    /* 平板竖屏/小屏幕 */
+    .container {
+        padding: 1.5rem;
+    }
+    
+    .brand {
+        font-size: 1rem;
+    }
+
+    .subtitle {
+        font-size: 0.7rem;
+    }
+    
     .main-title {
         font-size: 3rem;
+        letter-spacing: 0.1rem;
+        /* 简化阴影，减少性能负担 */
+        text-shadow: 
+            0 0 10px var(--primary-color),
+            0 0 20px var(--secondary-color);
     }
-    .subtitle {
-        font-size: 1rem;
-        letter-spacing: 0.2rem;
-    }
+    
     footer {
         font-size: 0.7rem;
-        padding: 0 1rem 1rem;
     }
 }
 
 @media (max-width: 480px) {
-    .main-title {
-        font-size: 2.2rem;
+    /* 手机设备 */
+    header {
+        margin-top: 0.5rem;
     }
+
+    .container {
+        padding: 1rem;
+        justify-content: flex-start;
+        padding-top: 0.5rem;
+    }
+
+    .brand {
+        font-size: 0.9rem;
+        letter-spacing: 0.1rem;
+    }
+
+    .subtitle {
+        font-size: 0.6rem;
+        letter-spacing: 0.05rem;
+    }
+
+    main {
+        flex: 0 0 auto;
+        margin: auto 0;
+    }
+
+    .main-title {
+        font-size: 2rem;
+        letter-spacing: 0.05rem;
+        /* 移动端简化阴影 */
+        text-shadow: 
+            0 0 10px var(--primary-color),
+            0 0 15px var(--secondary-color);
+    }
+
+    footer {
+        font-size: 0.65rem;
+        padding: 0.5rem 0;
+    }
+
     footer p {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.3rem;
+        line-height: 1.3;
+    }
+}
+
+@media (max-width: 360px) {
+    /* 超小屏幕 */
+    .main-title {
+        font-size: 1.5rem;
+    }
+
+    .brand {
+        font-size: 0.8rem;
+    }
+
+    footer {
+        font-size: 0.6rem;
+    }
+
+    .container {
+        padding: 0.8rem;
+    }
+}
+
+/* ============ 动画性能优化 ============ */
+
+/* 减少在低配置设备上的动画复杂度 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 手机端关闭某些重型动画 */
+@media (max-width: 768px) {
+    .main-title::before {
+        /* 简化blur效果 */
+        filter: blur(4px);
     }
 }
