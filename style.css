@@ -1,0 +1,199 @@
+:root {
+    --primary-color: #00f2ff;
+    --secondary-color: #7000ff;
+    --accent-color: #ff00c8;
+    --bg-color: #050505;
+    --text-color: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+#bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    perspective: 1000px;
+}
+
+header {
+    text-align: center;
+    margin-top: 2rem;
+    animation: fadeInDown 1s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.brand {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-color);
+    letter-spacing: 0.3rem;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    letter-spacing: 0.2rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--primary-color);
+    opacity: 0.8;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+.main-title {
+    font-size: 5rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    position: relative;
+    color: #fff;
+    letter-spacing: 0.2rem;
+    transform: rotateX(20deg) rotateY(-10deg);
+    animation: titleFloat 4s ease-in-out infinite alternate;
+    text-shadow: 
+        0 1px 0 #ccc,
+        0 2px 0 #c9c9c9,
+        0 3px 0 #bbb,
+        0 4px 0 #b9b9b9,
+        0 5px 0 #aaa,
+        0 6px 1px rgba(0,0,0,.1),
+        0 0 5px rgba(0,0,0,.1),
+        0 1px 3px rgba(0,0,0,.3),
+        0 3px 5px rgba(0,0,0,.2),
+        0 5px 10px rgba(0,0,0,.25),
+        0 10px 10px rgba(0,0,0,.2),
+        0 20px 20px rgba(0,0,0,.15),
+        0 0 20px var(--primary-color),
+        0 0 40px var(--secondary-color);
+}
+
+.main-title::before {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--accent-color);
+    z-index: -1;
+    filter: blur(8px);
+    opacity: 0.5;
+    animation: glitch 3s infinite;
+}
+
+footer {
+    width: 100%;
+    text-align: center;
+    padding: 1.5rem 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    animation: fadeInUp 1s ease-out;
+    border-top: 1px solid rgba(112, 0, 255, 0.2);
+    background: linear-gradient(transparent, rgba(112, 0, 255, 0.05));
+}
+
+footer span.placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+@keyframes titleFloat {
+    from {
+        transform: rotateX(15deg) rotateY(-15deg) translateY(0);
+    }
+    to {
+        transform: rotateX(25deg) rotateY(15deg) translateY(-20px);
+    }
+}
+
+@keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-5px, 5px); }
+    40% { transform: translate(-5px, -5px); }
+    60% { transform: translate(5px, 5px); }
+    80% { transform: translate(5px, -5px); }
+    100% { transform: translate(0); }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 3rem;
+    }
+    .subtitle {
+        font-size: 1rem;
+        letter-spacing: 0.2rem;
+    }
+    footer {
+        font-size: 0.7rem;
+        padding: 0 1rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 2.2rem;
+    }
+    footer p {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
