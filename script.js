@@ -74,7 +74,7 @@ class Particle {
         this.size = Math.random() * 3 + 1;
         this.color = Math.random() > 0.6 ? colors.primary : 
                       Math.random() > 0.3 ? colors.secondary : colors.accent;
-        this.alpha = Math.random() * 0.5 + 0.3;
+        this.alpha = Math.random() * 0.7 + 0.4; // Increased alpha range for better visibility
         this.trail = [];
     }
 
@@ -374,26 +374,46 @@ class GeometricShape {
         const scale = 1000 / (1000 + this.z);
         const alpha = Math.max(0.1, Math.min(0.8, scale));
 
-        // Draw edges with glow
-        ctx.shadowBlur = 15;
+        // Draw edges with enhanced glow
+        ctx.shadowBlur = 25; // Increased from 15
         ctx.shadowColor = this.color;
         ctx.strokeStyle = this.color;
-        ctx.lineWidth = 2 * scale;
-        ctx.globalAlpha = alpha;
-
+        ctx.lineWidth = 3 * scale; // Increased from 2 * scale
+        ctx.globalAlpha = Math.min(0.9, alpha * 1.5); // Increased alpha
+        
+        // Create glowing edges
+        ctx.save();
+        ctx.filter = 'brightness(1.5) contrast(1.2)';
+        
         projectedEdges.forEach(edge => {
             ctx.beginPath();
             ctx.moveTo(edge[0].x, edge[0].y);
             ctx.lineTo(edge[1].x, edge[1].y);
             ctx.stroke();
         });
+        
+        ctx.restore();
 
-        // Draw vertices
+        // Draw enhanced vertices with larger glow
         const projectedVertices = this.vertices.map(v => this.project(v));
         projectedVertices.forEach(v => {
             const vertexScale = 1000 / (1000 + v.z);
+            const size = 4 * vertexScale; // Increased from 3
+            
+            // Vertex glow
+            const gradient = ctx.createRadialGradient(v.x, v.y, 0, v.x, v.y, size * 2);
+            gradient.addColorStop(0, this.color + 'ff');
+            gradient.addColorStop(0.5, this.color + '80');
+            gradient.addColorStop(1, 'transparent');
+            
             ctx.beginPath();
-            ctx.arc(v.x, v.y, 3 * vertexScale, 0, Math.PI * 2);
+            ctx.arc(v.x, v.y, size * 2, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Core vertex
+            ctx.beginPath();
+            ctx.arc(v.x, v.y, size * 0.8, 0, Math.PI * 2);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
         });
@@ -415,25 +435,45 @@ class LightBeam {
     }
 
     draw() {
-        const gradient = ctx.createLinearGradient(
-            this.x, 0,
-            this.x + this.direction * 200, height
-        );
+        // Enhanced light beam with multiple layers
+        const beamWidth = this.width * 1.5; // Increased width
         
-        const alpha = 0.1 + Math.sin(time * this.speed + this.offset) * 0.05;
-        gradient.addColorStop(0, `${this.color}00`);
-        gradient.addColorStop(0.3, `${this.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`);
-        gradient.addColorStop(0.7, `${this.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`);
-        gradient.addColorStop(1, `${this.color}00`);
-
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.moveTo(this.x, 0);
-        ctx.lineTo(this.x + this.direction * 100, height * 0.3);
-        ctx.lineTo(this.x + this.direction * 200, height);
-        ctx.lineTo(this.x + this.direction * 100, height * 0.3);
-        ctx.closePath();
-        ctx.fill();
+        // Create multiple gradient layers for enhanced brightness
+        const gradients = [
+            { opacity: 0.3, width: beamWidth * 2 },
+            { opacity: 0.2, width: beamWidth * 1.5 },
+            { opacity: 0.15, width: beamWidth }
+        ];
+        
+        const alpha = 0.2 + Math.sin(time * this.speed + this.offset) * 0.1; // Increased base alpha
+        
+        gradients.forEach((layer, index) => {
+            const gradient = ctx.createLinearGradient(
+                this.x, 0,
+                this.x + this.direction * 250, height
+            );
+            
+            const intensity = alpha * layer.opacity;
+            gradient.addColorStop(0, `${this.color}00`);
+            gradient.addColorStop(0.2, `${this.color}${Math.floor(intensity * 128).toString(16).padStart(2, '0')}`);
+            gradient.addColorStop(0.5, `${this.color}${Math.floor(intensity * 255).toString(16).padStart(2, '0')}`);
+            gradient.addColorStop(0.8, `${this.color}${Math.floor(intensity * 128).toString(16).padStart(2, '0')}`);
+            gradient.addColorStop(1, `${this.color}00`);
+            
+            ctx.fillStyle = gradient;
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 10 + index * 5; // Enhanced glow
+            
+            ctx.beginPath();
+            ctx.moveTo(this.x, 0);
+            ctx.lineTo(this.x + this.direction * (100 + index * 30), height * (0.25 + index * 0.05));
+            ctx.lineTo(this.x + this.direction * (200 + index * 50), height);
+            ctx.lineTo(this.x + this.direction * (100 + index * 30), height * (0.25 + index * 0.05));
+            ctx.closePath();
+            ctx.fill();
+        });
+        
+        ctx.shadowBlur = 0; // Reset shadow
     }
 }
 
@@ -755,7 +795,7 @@ class GlowingOrb {
 
 function createParticles() {
     particles = [];
-    const count = Math.floor((width * height) / 8000) + 150;
+    const count = Math.floor((width * height) / 6000) + 250; // Increased particle count
     for (let i = 0; i < count; i++) {
         particles.push(new Particle());
     }
@@ -778,7 +818,14 @@ function createGeometricShapes() {
         { type: 'tetrahedron', x: width * 0.1, y: height * 0.8, z: 420, size: 50, color: colors.orange },
         { type: 'hexagonal', x: width * 0.7, y: height * 0.15, z: 320, size: 45, color: colors.purple },
         { type: 'dodecahedron', x: width * 0.55, y: height * 0.75, z: 480, size: 38, color: colors.cyan },
-        { type: 'icosahedron', x: width * 0.25, y: height * 0.65, z: 280, size: 42, color: colors.pink }
+        { type: 'icosahedron', x: width * 0.25, y: height * 0.65, z: 280, size: 42, color: colors.pink },
+        // Additional shapes for more visual impact
+        { type: 'cube', x: width * 0.95, y: height * 0.9, z: 150, size: 55, color: colors.primary },
+        { type: 'pyramid', x: width * 0.05, y: height * 0.1, z: 180, size: 65, color: colors.secondary },
+        { type: 'octahedron', x: width * 0.5, y: height * 0.1, z: 120, size: 48, color: colors.accent },
+        { type: 'diamond', x: width * 0.8, y: height * 0.85, z: 220, size: 52, color: colors.gold },
+        { type: 'tetrahedron', x: width * 0.12, y: height * 0.45, z: 340, size: 47, color: colors.green },
+        { type: 'hexagonal', x: width * 0.88, y: height * 0.55, z: 290, size: 43, color: colors.purple }
     ];
 
     shapeConfigs.forEach(config => {
@@ -800,11 +847,11 @@ function createGeometricShapes() {
 
 function createLightBeams() {
     lightBeams = [];
-    const beamCount = 8; // Increased for more dynamic effect
+    const beamCount = 12; // Significantly increased for more dynamic effect
     for (let i = 0; i < beamCount; i++) {
-        const x = (width / beamCount) * i + Math.random() * 100;
+        const x = (width / beamCount) * i + Math.random() * 80;
         const direction = Math.random() > 0.5 ? 1 : -1;
-        const colorChoices = [colors.primary, colors.secondary, colors.accent, colors.gold, colors.green];
+        const colorChoices = [colors.primary, colors.secondary, colors.accent, colors.gold, colors.green, colors.purple, colors.cyan];
         const color = colorChoices[i % colorChoices.length];
         lightBeams.push(new LightBeam(x, direction, color));
     }
@@ -812,7 +859,7 @@ function createLightBeams() {
 
 function createStarField() {
     starField = [];
-    const starCount = Math.floor((width * height) / 12000) + 200;
+    const starCount = Math.floor((width * height) / 8000) + 300; // Increased star count
     for (let i = 0; i < starCount; i++) {
         starField.push(new Star());
     }
@@ -820,11 +867,11 @@ function createStarField() {
 
 function createEnergyClouds() {
     energyClouds = [];
-    const cloudCount = 4;
+    const cloudCount = 6; // Increased energy cloud count
     for (let i = 0; i < cloudCount; i++) {
-        const x = width * (0.2 + Math.random() * 0.6);
-        const y = height * (0.2 + Math.random() * 0.6);
-        const radius = 80 + Math.random() * 120;
+        const x = width * (0.1 + Math.random() * 0.8);
+        const y = height * (0.1 + Math.random() * 0.8);
+        const radius = 100 + Math.random() * 150; // Increased radius
         energyClouds.push(new EnergyCloud(x, y, radius));
     }
 }
@@ -843,7 +890,7 @@ function createWaveRipple() {
 
 function createGlowingOrbs() {
     glowingOrbs = [];
-    const orbCount = 10; // Increased for more dynamic effect
+    const orbCount = 18; // Significantly increased for more dynamic effect
     for (let i = 0; i < orbCount; i++) {
         glowingOrbs.push(new GlowingOrb(i, orbCount));
     }
@@ -851,23 +898,25 @@ function createGlowingOrbs() {
 
 function drawPerspectiveFloor() {
     const horizonY = height * 0.65;
-    const gridLines = 25; // Increased for more detail
-    const verticalLines = 35; // Increased for more detail
+    const gridLines = 35; // Increased for more detail
+    const verticalLines = 45; // Increased for more detail
     
     // Enhanced perspective grid with dynamic colors
-    ctx.strokeStyle = `${colors.secondary}40`;
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = `${colors.secondary}60`; // Increased opacity
+    ctx.lineWidth = 2; // Increased line width
 
     // Horizontal lines (perspective)
     for (let i = 0; i < gridLines; i++) {
         const progress = i / gridLines;
         const y = horizonY + Math.pow(progress, 2) * (height - horizonY);
-        const alpha = 0.15 + progress * 0.25;
+        const alpha = 0.25 + progress * 0.35; // Increased alpha range
         
         const colorShift = Math.sin(time * 2 + progress * 10) * 0.5 + 0.5;
         const color = colorShift > 0.5 ? colors.secondary : colors.primary;
         
         ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.shadowBlur = 5; // Add glow
+        ctx.shadowColor = color;
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -878,12 +927,14 @@ function drawPerspectiveFloor() {
     const centerX = width / 2;
     for (let i = -verticalLines / 2; i < verticalLines / 2; i++) {
         const angle = i * 0.05;
-        const alpha = 0.08 + Math.abs(i) / (verticalLines / 2) * 0.2;
+        const alpha = 0.15 + Math.abs(i) / (verticalLines / 2) * 0.3; // Increased alpha
         
         const colorShift = Math.cos(time * 1.5 + i * 0.3) * 0.5 + 0.5;
         const color = colorShift > 0.5 ? colors.accent : colors.cyan;
         
         ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.shadowBlur = 5; // Add glow
+        ctx.shadowColor = color;
         ctx.beginPath();
         ctx.moveTo(centerX + Math.sin(angle) * 100, horizonY);
         ctx.lineTo(centerX + Math.sin(angle) * width * 0.8, height);
@@ -891,29 +942,31 @@ function drawPerspectiveFloor() {
     }
 
     // Enhanced horizon glow with multiple layers
-    const horizonGradient = ctx.createLinearGradient(0, horizonY - 150, 0, horizonY + 150);
+    const horizonGradient = ctx.createLinearGradient(0, horizonY - 200, 0, horizonY + 200);
     horizonGradient.addColorStop(0, 'transparent');
-    horizonGradient.addColorStop(0.3, `${colors.primary}30`);
-    horizonGradient.addColorStop(0.5, `${colors.secondary}40`);
-    horizonGradient.addColorStop(0.7, `${colors.accent}30`);
+    horizonGradient.addColorStop(0.25, `${colors.primary}50`); // Increased intensity
+    horizonGradient.addColorStop(0.5, `${colors.secondary}70`); // Increased intensity
+    horizonGradient.addColorStop(0.75, `${colors.accent}50`); // Increased intensity
     horizonGradient.addColorStop(1, 'transparent');
     
     ctx.fillStyle = horizonGradient;
-    ctx.fillRect(0, horizonY - 150, width, 300);
+    ctx.fillRect(0, horizonY - 200, width, 400);
     
     // Additional pulse effect at horizon
-    const pulseIntensity = Math.sin(time * 3) * 0.3 + 0.7;
-    const pulseGradient = ctx.createLinearGradient(0, horizonY - 50, 0, horizonY + 50);
+    const pulseIntensity = Math.sin(time * 3) * 0.3 + 0.8; // Increased base intensity
+    const pulseGradient = ctx.createLinearGradient(0, horizonY - 80, 0, horizonY + 80);
     pulseGradient.addColorStop(0, 'transparent');
-    pulseGradient.addColorStop(0.5, `${colors.gold}${Math.floor(pulseIntensity * 100).toString(16).padStart(2, '0')}`);
+    pulseGradient.addColorStop(0.5, `${colors.gold}${Math.floor(pulseIntensity * 180).toString(16).padStart(2, '0')}`);
     pulseGradient.addColorStop(1, 'transparent');
     
     ctx.fillStyle = pulseGradient;
-    ctx.fillRect(0, horizonY - 50, width, 100);
+    ctx.fillRect(0, horizonY - 80, width, 160);
+    
+    ctx.shadowBlur = 0; // Reset shadow
 }
 
 function drawHexagonPattern() {
-    const hexSize = 60;
+    const hexSize = 80; // Increased hex size
     const hexHeight = hexSize * Math.sqrt(3);
     const cols = Math.ceil(width / hexSize) + 2;
     const rows = Math.ceil(height / hexHeight) + 2;
@@ -924,9 +977,9 @@ function drawHexagonPattern() {
             const y = row * hexHeight + (col % 2 === 0 ? 0 : hexHeight / 2);
             
             // Enhanced movement with wave distortion
-            const waveDistortion = Math.sin(time * 2 + row * 0.3) * 20;
+            const waveDistortion = Math.sin(time * 2 + row * 0.3) * 25;
             const offsetX = (time * 20) % (hexSize * 1.5) + waveDistortion;
-            const offsetY = (time * 10) % hexHeight + Math.cos(time * 1.5 + col * 0.3) * 15;
+            const offsetY = (time * 10) % hexHeight + Math.cos(time * 1.5 + col * 0.3) * 20;
             
             const finalX = x - offsetX;
             const finalY = y + offsetY;
@@ -938,8 +991,8 @@ function drawHexagonPattern() {
             );
             
             const deformFactor = 1 + Math.sin(time * 3 + distFromCenter * 0.01) * 0.3;
-            const alpha = Math.max(0, 0.15 - distFromCenter / (width * 0.8)) * 
-                         (0.6 + Math.sin(time * 2 + distFromCenter * 0.01) * 0.4);
+            const alpha = Math.max(0, 0.25 - distFromCenter / (width * 0.8)) * 
+                         (0.7 + Math.sin(time * 2 + distFromCenter * 0.01) * 0.3); // Increased alpha
 
             if (alpha > 0.01) {
                 drawDeformedHexagon(finalX, finalY, hexSize * deformFactor, alpha, distFromCenter);
@@ -953,10 +1006,10 @@ function drawDeformedHexagon(x, y, size, alpha, distance) {
     const color = colorShift > 0.5 ? colors.accent : colors.primary;
     
     ctx.strokeStyle = `${color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
-    ctx.lineWidth = 1 + Math.sin(time * 4 + distance * 0.01) * 0.5;
+    ctx.lineWidth = 2 + Math.sin(time * 4 + distance * 0.01) * 1; // Increased line width
 
-    // Add subtle glow effect
-    ctx.shadowBlur = 8;
+    // Enhanced glow effect
+    ctx.shadowBlur = 12; // Increased from 8
     ctx.shadowColor = color;
 
     ctx.beginPath();
@@ -970,6 +1023,14 @@ function drawDeformedHexagon(x, y, size, alpha, distance) {
     }
     ctx.closePath();
     ctx.stroke();
+    
+    // Add inner glow for more depth
+    const innerGradient = ctx.createRadialGradient(x, y, 0, x, y, size * 0.8);
+    innerGradient.addColorStop(0, `${color}${Math.floor(alpha * 50).toString(16).padStart(2, '0')}`);
+    innerGradient.addColorStop(0.7, 'transparent');
+    
+    ctx.fillStyle = innerGradient;
+    ctx.fill();
     
     ctx.shadowBlur = 0;
 }
@@ -989,15 +1050,50 @@ function drawVignette() {
 function animate() {
     time = Date.now() * 0.001;
 
-    // Clear with semi-transparent black for trail effect
-    ctx.fillStyle = `${colors.bg}f0`;
+    // Clear with semi-transparent black for trail effect (reduced opacity to show background effects)
+    ctx.fillStyle = `${colors.bg}80`;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw background elements in order for proper layering
+    // Draw background elements in order for proper layering (back to front)
+    // 1. Star field (deep background)
+    starField.forEach(star => {
+        star.update();
+        star.draw();
+    });
+
+    // 2. Background patterns
     drawHexagonPattern();
     drawPerspectiveFloor();
     
-    // Update and draw all effects
+    // 3. Geometric shapes (mid-ground 3D objects)
+    geometricShapes.sort((a, b) => b.z - a.z);
+    geometricShapes.forEach(shape => {
+        shape.update();
+        shape.draw();
+    });
+
+    // 4. Energy clouds (mid-ground effects)
+    energyClouds.forEach(cloud => {
+        cloud.update();
+        cloud.draw();
+    });
+
+    // 5. Light beams (mid-ground lighting effects)
+    lightBeams.forEach(beam => beam.draw());
+
+    // 6. Glowing orbs (foreground lighting effects)
+    glowingOrbs.forEach(orb => {
+        orb.update();
+        orb.draw();
+    });
+
+    // 7. Particles (foreground details)
+    particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+
+    // 8. Foreground effects
     if (scanlineEffect) {
         scanlineEffect.update();
         scanlineEffect.draw();
@@ -1007,42 +1103,8 @@ function animate() {
         waveRipple.update();
         waveRipple.draw();
     }
-    
-    // Draw energy clouds
-    energyClouds.forEach(cloud => {
-        cloud.update();
-        cloud.draw();
-    });
-    
-    // Draw star field
-    starField.forEach(star => {
-        star.update();
-        star.draw();
-    });
 
-    // Draw light beams
-    lightBeams.forEach(beam => beam.draw());
-
-    // Draw geometric shapes (sorted by z for proper depth)
-    geometricShapes.sort((a, b) => b.z - a.z);
-    geometricShapes.forEach(shape => {
-        shape.update();
-        shape.draw();
-    });
-
-    // Draw particles
-    particles.forEach(p => {
-        p.update();
-        p.draw();
-    });
-
-    // Draw enhanced glowing orbs
-    glowingOrbs.forEach(orb => {
-        orb.update();
-        orb.draw();
-    });
-
-    // Apply vignette
+    // 9. Final vignette overlay
     drawVignette();
 
     requestAnimationFrame(animate);
